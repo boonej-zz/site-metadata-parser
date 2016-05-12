@@ -1,0 +1,7 @@
+{
+  "name"          : "site-metadata-parser",
+  "files"         : [
+    "package.json"
+  ],
+  "description"   : "A simple metadata parser."
+}
