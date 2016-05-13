@@ -3,6 +3,9 @@ var _ = require('underscore');
 var http = require('http');
 var htmlparser = require('htmlparser');
 
+const HEAD_OPEN_TAG = '<head>';
+const HEAD_CLOSE_TAG = '</head>';
+
 var metaMap = {
   'og:name'             : 'name',
   'og:description'      : 'description',
@@ -64,25 +67,52 @@ var parser = function(args) {
     parseHead(head);
   }
 
+  function findFirstIndex(doc, regex) {
+    pre: {
+      typeof doc === 'string', 'only accept string values';
+      regex !== null, 'search parameter must not be null';
+    }
+    
+    var match = doc.search(regex);
+    if (match.length > 0) {
+      match = match[0];
+    } else {
+      return false;
+    }
+    
+    var match = {
+      string:   match,
+      index:    doc.indexOf(match)
+    };
+
+    post: {
+      typeof match.string === 'string', 'will provide matched tag';
+      typeof match.index === 'number', 'will provide index of match';
+    }
+    
+    return match;
+  }
+
   function trimHead(doc) {
       pre: {
         typeof doc === 'string', 'only string values may be passed';
         doc.length > 0, 'document must contain data';
-        doc.indexOf('</head>') > doc.indexOf('<head>'), 
+        doc.indexOf(HEAD_CLOSE_TAG) > doc.indexOf(HEAD_OPEN_TAG), 
           'must contain opening and closing head elements';
       }
 
-      var start = doc.indexOf('<head>');
-      var end = doc.indexOf('</head>');
-      var result = doc.substr(start, end + 7 - start);
-      /** 
+      var start = doc.indexOf(HEAD_OPEN_TAG);
+      var end = doc.indexOf(HEAD_CLOSE_TAG);
+      var result = doc.substr(start, end + HEAD_CLOSE_TAG.length
+          - start);
+
       post: {
         typeof result === 'string', 'will return a string value';
-        result.substr(0, 6) === '<head>', 'will begin with head tag';
-        result.substr(result.length - 7) === '</head>', 
-          'will contain closing head tag';
+        result.substr(0, HEAD_OPEN_TAG.length) === HEAD_OPEN_TAG, 
+          'will begin with head tag';
+        result.substr(result.length - HEAD_CLOSE_TAG.length) === 
+          HEAD_CLOSE_TAG, 'will contain closing head tag';
       }
-      **/
 
       return result;
   }

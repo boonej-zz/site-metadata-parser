@@ -3,7 +3,7 @@
 ["contracts", {
 "env": {
 "production": {
-"strip": true
+"strip": false
 }
 }
 }]

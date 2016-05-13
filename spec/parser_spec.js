@@ -32,7 +32,6 @@ describe('Parser', function() {
         if (typeof object !== 'object') {
           throw('Invalid object type returned.');
         }
-        console.log(object);
         done();
       });
     });
