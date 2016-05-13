@@ -1,7 +1,21 @@
 {
-  "name"          : "site-metadata-parser",
-  "files"         : [
-    "package.json"
+  "name": "site-metadata-parser",
+  "files": [
+    "parser.json"
   ],
-  "description"   : "A simple metadata parser."
+  "description": "A simple metadata parser.",
+  "version": "0.1.1",
+  "repository": "https://github.com/boonej/site-metadata-parser",
+  "license": "MIT",
+  "dependencies": {
+    "chai": "^3.5.0",
+    "expect": "^1.20.1",
+    "htmlparser": "^1.7.7",
+    "mocha": "^2.4.5",
+    "should": "^8.3.1",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {
+    "babel-plugin-contracts": "^1.1.1"
+  }
 }

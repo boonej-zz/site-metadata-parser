@@ -1,0 +1,11 @@
+{
+"plugins": [
+["contracts", {
+"env": {
+"production": {
+"strip": true
+}
+}
+}]
+]
+}
