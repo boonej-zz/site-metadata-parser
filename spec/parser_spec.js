@@ -61,6 +61,7 @@ describe('Parser', function() {
       it ('should create a valid object', function(done){
         var obj = new Parser(params).metaParser.parse(testHTML.toString());
         expect(obj.twitterAppIdIpad).toBe('544007664');
+        console.log(obj);
         done();
       });
     });
