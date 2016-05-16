@@ -40,7 +40,7 @@ var parser = function(args){
   this.metaParser = new metaParser(); 
 
   // public methods
-  this.parse = function startParseOperation(callback){
+  this.scrape = function startParseOperation(callback){
     pre: {
       typeof host === 'string', 'must provide a valid string for host';
       typeof path === 'string', 'must provide a valid string for path';

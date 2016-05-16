@@ -21,7 +21,7 @@ var Scraper = require('light-html-meta');
 new Scraper({
   host: 'www.somesite.com',
   path: '/'
-}).parse(function(err, data) {
+}).scrape(function(err, data) {
   // do something with data
 });
 ```
