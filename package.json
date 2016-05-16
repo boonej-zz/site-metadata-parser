@@ -4,11 +4,8 @@
     "name": "Jonathan Boone",
     "email": "the.booneage@gmail.com"
   },
-  "files": [
-    "./lib/"
-  ],
   "description": "A simple metadata parser.",
-  "main": "./lib/parser.js",
+  "main": "lib/parser.js",
   "version": "1.0.0",
   "repository": "https://github.com/boonej/site-metadata-parser",
   "license": "MIT",
