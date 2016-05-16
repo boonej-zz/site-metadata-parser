@@ -1,6 +1,6 @@
-light-html-meta
+lite-meta-scraper
 ===============================================================================
-A lightweight metadata parser for remote HTML pages.
+> A lightweight metadata parser for remote HTML pages.
 -------------------------------------------------------------------------------
 This library is meant to provide a fast, lightweight method to strip the 
 content of `<meta>` tags from remote websites. It is intended to be 
@@ -10,7 +10,7 @@ stripped and returned in a JSON object.
 Install
 -------------------------------------------------------------------------------
 ```
-npm install light-html-meta
+npm install lite-meta-scraper
 ```
 
 Usage
