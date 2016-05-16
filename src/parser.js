@@ -1,180 +1,295 @@
-var Connection = require('./connection');
-var _ = require('underscore');
-var http = require('http');
-var htmlparser = require('htmlparser');
+var https = require('https');
+const EventEmitter = require('events');
 
-const HEAD_OPEN_TAG = '<head>';
-const HEAD_CLOSE_TAG = '</head>';
+class ParserEmitter extends EventEmitter{}
 
-var metaMap = {
-  'og:name'             : 'name',
-  'og:description'      : 'description',
-  'og:type'             : 'type',
-  'og:image'            : 'image',
-  'og:url'              : 'url',
-  'og:audio'            : 'audio',
-  'og:determiner'       : 'determiner',
-  'og:locale'           : 'locale',
-  'og:site_name'        : 'siteName',
-  'og:image:url'        : 'imageUrl',
-  'og:image:secure_url' : 'imageSecureUrl',
-  'og:image:type'       : 'imageType',
-  'og:image:width'      : 'imageWidth',
-  'og:image:height'     : 'imageHeight',
-  'og:video'            : 'video',
-  'og:video:secure_url' : 'videoSecureUrl',
-  'og:video:type'       : 'videoType',
-  'og:video:width'      : 'videoWidth',
-  'og:video:height'     : 'videoHeight',
-  'og:audio:secure_url' : 'audioSecureUrl',
-  'og:audio:type'       : 'audioType'
-};
-
-var metaKeys = _.keys(metaMap);
-
-var parser = function(args) {
-
+var parser = function(args){
+  
   pre: {
-    args.host !== null, 'host cannot be null';
+    args !== null, 'must provide an arguments object';
+    typeof args === 'object', 'must provide an object type for arguments';
+    typeof args.host === 'string', 'must provide a string for host argument';
+    args.host.indexOf('http') === -1, 'host must not provide protocol';
   }
 
-  var params = {
-    host: false,
-    path: '/'
-  };
 
-  _.extend(params, _(args).pick(_(params).keys()));
+  // constants
+  const HEAD_OPEN_TAG = '<head>';
+  const HEAD_CLOSE_TAG = '</head>';
+  const STOP_PARSING = 'stopParsing';
+  const EMITTER = new ParserEmitter();
 
-  var host = params.host;
-  var path = params.path || '/';
+  // public properties
+  
+  // private properties
+  var host = args.host; // host name (no protocol - www.xxx.xxx)
+  var path = args.path || '/'; // url path (/xxx.html)
 
-  var metaObject = {};
-  var $callback = null;
+  var stopParsing = false; // should we stop parsing data?
+  var startedReadingHead = false; // did we begin reading the head?
+  var finishedReadingHead = false; // did we finish reading all of the head?
 
-  this.parse = function(callback) {
-    pre: typeof callback === 'function', 'must provide a callback function.';
-    
-    $callback = callback; 
+  var tempData = null; // temporary data storage
+  var metaObject = null; // parsed meta object
+  var metaError = null; // error object provided to callback
+  var metaCallback = null; // callback provided to requestor
 
-    new Connection({
+  // Handle DONE emitter
+  EMITTER.on(STOP_PARSING, afterStopParsing);
+
+  this.metaParser = new metaParser(); 
+
+  // public methods
+  this.parse = function startParseOperation(callback){
+    pre: {
+      typeof host === 'string', 'must provide a valid string for host';
+      typeof path === 'string', 'must provide a valid string for path';
+    }
+
+    metaCallback = callback;
+
+    var options = {
       host: host,
       path: path
-    }, afterConnection).start();
-  }
-
-  function afterConnection(data) {
-    var head = trimHead(data);
-    parseHead(head);
-  }
-
-  function findFirstIndex(doc, regex) {
-    pre: {
-      typeof doc === 'string', 'only accept string values';
-      regex !== null, 'search parameter must not be null';
     }
-    
-    var match = doc.search(regex);
-    if (match.length > 0) {
-      match = match[0];
-    } else {
-      return false;
-    }
-    
-    var match = {
-      string:   match,
-      index:    doc.indexOf(match)
-    };
+
+    https.request(options, afterConnection).end();
 
     post: {
-      typeof match.string === 'string', 'will provide matched tag';
-      typeof match.index === 'number', 'will provide index of match';
+
+    }
+  };
+
+  // private functions
+
+  // receives initial connection response and forwards processing
+  // if neccessary
+  function afterConnection(response){
+    pre: {
+      response !== null, 'response must not be null',
+      typeof response === 'object', 'response must be a valid object'
+    }
+
+
+    if (response.statusCode === 200){
+      tempData = '';
+
+      response.on('error', afterError);
+      response.on('data', afterData);
+      response.on('end', afterEnd);
+    } else {
+      EMITTER.emit(STOP_PARSING);
+    }
+
+    post: {
+      response.statusCode === 200 || stopParsing === true, 
+        'should not parse an invalid server response'
+    }
+  }
+
+  // handles error - stops processing if error is received
+  function afterError(err){
+    pre: {
+      err !== null, 'error object cannot be null';
+    }
+
+    metaObject = null;
+    metaError = err;
+    EMITTER.emit(STOP_PARSING);
+
+    post: {
+      stopParsing === true, 'parsing should stop';
+    }
+  }
+
+  // receive data blocks - only accepting the head element
+  function afterData(chunk){
+    pre: {
+      chunk != null, 'must provide data in chunks';
+      typeof tempData === 'string', 'temp data object must be a string';
+    }
+
+    if (finishedReadingHead){
+      return;
+    }
+
+    var td = chunk.toString();
+    
+    if (!startedReadingHead) {
+      var headOpenPosition = td.indexOf(HEAD_OPEN_TAG);
+
+      if (headOpenPosition !== -1){
+        td = td.substr(headOpenPosition);
+        startedReadingHead = true;
+      }
+    }
+
+    var headClosePosition = td.indexOf(HEAD_CLOSE_TAG);
+
+    if (headClosePosition !== -1) {
+      td = td.substr(0, headClosePosition + HEAD_CLOSE_TAG.length);
+      tempData += td;
+      finishedReadingHead = true;
+      afterHeadReceived(); 
+      return;
+    }
+   
+    if (startedReadingHead && !finishedReadingHead) {
+      tempData += td;
+    }
+  }
+
+  // initiate header processing
+  function afterHeadReceived() {
+    pre: {
+      metaError === null, 'no errors should have occured before processing';
+    }
+
+    metaObject = new metaParser().parse(tempData, {});
+    EMITTER.emit(STOP_PARSING);
+
+    post: {
+      metaObject !== null, 'meta object should not be null';
     }
     
-    return match;
   }
 
-  function trimHead(doc) {
-      pre: {
-        typeof doc === 'string', 'only string values may be passed';
-        doc.length > 0, 'document must contain data';
-        doc.indexOf(HEAD_CLOSE_TAG) > doc.indexOf(HEAD_OPEN_TAG), 
-          'must contain opening and closing head elements';
-      }
-
-      var start = doc.indexOf(HEAD_OPEN_TAG);
-      var end = doc.indexOf(HEAD_CLOSE_TAG);
-      var result = doc.substr(start, end + HEAD_CLOSE_TAG.length
-          - start);
-
-      post: {
-        typeof result === 'string', 'will return a string value';
-        result.substr(0, HEAD_OPEN_TAG.length) === HEAD_OPEN_TAG, 
-          'will begin with head tag';
-        result.substr(result.length - HEAD_CLOSE_TAG.length) === 
-          HEAD_CLOSE_TAG, 'will contain closing head tag';
-      }
-
-      return result;
-  }
-
-  function parseHead(head) {
-
-    pre: {
-      typeof head === 'string', 'head parameter must be a string';
-      head.length > 1, 'head parameter must contain data';
-      head.substr(0, 6) === '<head>', 'must begin with a head tag';
-      head.substr(head.length - 7) === '</head>', 'must end with a closing tag';
-    }
-
-    var handler = new htmlparser.DefaultHandler(htmlHandler);
-    var parser = new htmlparser.Parser(handler);
-    parser.parseComplete(head);
-
-  }
-
-  function extractMeta(dom) {
-    pre: {
-      dom !== null, 'must provide a valid document for traversal';
-    };
-    
-    _.each(dom, function(node, i, l) {
-      if (node.name === 'meta') {
-        if (node.attribs.name || node.attribs.property) {
-          var accessor = node.attribs.name
-            ? 'name'
-            : 'property';
-          handleMetaTag(node.attribs, accessor);
-        }
-      } else if (node.children && node.children.length > 0) {
-        extractMeta(node.children);
-      }
-    });
-    
-  }
-
-  function handleMetaTag(tag, accessor) {
-    pre: {
-      tag !== null, 'must pass a non null object';
-      accessor === 'name' || accessor === 'property', 
-               'accessor must be either -name- or -property-';
-      tag[accessor] !== null, 'tag must contain a property with accessor name';
-    }
-    var metaIndex = metaKeys.indexOf(tag[accessor]);
-    if (metaIndex !== -1) {
-      metaObject[metaMap[tag[accessor]]] = tag.content;
+  function afterEnd() {
+    if (tempData.length === 0) {
+      metaError = new Error('no head data received from server');
+      EMITTER.emit(STOP_PARSING);
     }
   }
 
-
-  function htmlHandler(err, dom) {
-    pre: {
-      dom !== null, 'must provide a valid dom';
+  function afterStopParsing() {
+    stopParsing = true;
+    if (typeof metaCallback == 'function') {
+      metaCallback(metaError, metaObject);
     }
-
-    extractMeta(dom);
-    $callback(metaObject);
   }
+
 
 };
+
+// subclass to extract individual meta tags and process them
+var metaParser = function() {
+
+  var tags = [];
+
+  this.parse = function parseHead(head) {
+    pre: {
+      typeof head === 'string', 'head parameter must be populated with a string';
+    }
+    
+    tags = parseMeta(head); 
+    var metaData = extractProperties(tags);
+    return metaData;
+  }
+
+  function clearBuffer() {
+    buffer = '';
+  }
+
+  function parseMeta(text) {
+    pre: {
+      typeof text === 'string', 'must provide a string to parse';
+    }
+
+    var buffer = '';
+    var index = 0;
+    var parsedObject = [];
+
+    let counter = 0;
+    let keepReading = false;
+
+    while (counter < text.length) {
+      var c = text[counter];
+      
+      if (c === '<') {
+        keepReading = true;
+      } else if (c === '>') {
+        keepReading = false;
+        buffer += c;
+        if (validateLine(buffer)) {
+          parsedObject.push(buffer);
+        }
+      }
+
+      if (keepReading) {
+        buffer += c;
+      } else {
+        buffer = '';
+      }
+      
+      ++counter;
+    }
+
+    parsedObject = parsedObject.join('');
+
+    return parsedObject;
+
+    post: {
+      parsedObject !== null, 'will not return a null value';
+      typeof parsedObject === 'string', 'must return a string value';
+    }
+  }
+
+  function validateLine(line) {
+    pre: {
+      typeof line === 'string', 'must provide a string value';
+    }
+
+    return line.toLowerCase().indexOf('<meta') !== -1;
+
+  }
+
+  function extractProperties(text) {
+    pre: {
+      typeof text === 'string', 'text property must be a string';
+    }
+
+    var keys = [];
+    var object = {};
+
+
+    var regExString = 
+      '[name|property]="([^"]*)" content="([^"]*)"';
+    var regEx = new RegExp(regExString, 'ig');
+   
+    var result; 
+
+    while (result = regEx.exec(text)) {
+      if (result.length > 2) {
+        object[cleanKey(result[1])] = result[2];
+      }
+    }
+
+    return object;
+  }
+
+  function cleanKey(key) {
+    pre: {
+      typeof key === 'string', 'must provide string value for key';
+    }
+  
+    keyParts = key.split(/:|_/);
+    
+    if (keyParts.length > 1) {
+      for (var i = 0; i != keyParts.length; ++i) {
+        switch (i) {
+          case 0:
+            keyParts[i] = keyParts[i].toLowerCase();
+            break;
+          default:
+            keyParts[i] = keyParts[i].substr(0, 1).toUpperCase() + 
+              keyParts[i].substr(1).toLowerCase();
+            break;
+        }
+      }
+    }
+    return keyParts.join('');
+  }
+
+}
 
 module.exports = parser;
