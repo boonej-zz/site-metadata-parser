@@ -10,10 +10,8 @@
   "dependencies": {
     "chai": "^3.5.0",
     "expect": "^1.20.1",
-    "htmlparser": "^1.7.7",
     "mocha": "^2.4.5",
     "should": "^8.3.1",
-    "underscore": "^1.8.3"
   },
   "devDependencies": {
     "babel-plugin-contracts": "^1.1.1"
