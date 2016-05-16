@@ -1,5 +1,5 @@
 {
-  "name": "site-metadata-parser",
+  "name": "lite-meta-scraper",
   "files": [
     "./lib/"
   ],
