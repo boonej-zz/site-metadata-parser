@@ -17,6 +17,23 @@ describe('Parser', function() {
         new Parser(params);
       }).toNotThrow();
     });
+
+    it ('should throw exception if no host is provided', function(){
+      expect(function(){
+        new Parser({});
+      }).toThrow('must provide a string for host argument');
+    });
+
+    it ('should strip protocol from an unsecure http url', function(){
+      var p = new Parser({host: 'http://www.google.com'});
+      expect(p.getHost()).toBe('www.google.com');
+    });
+
+    it ('should strip protocol from an unsecure https url', function(){
+      var p = new Parser({host: 'https://www.google.com'});
+      expect(p.getHost()).toBe('www.google.com');
+    });
+
   });
 
   describe('scrape()', function() {

@@ -9,7 +9,6 @@ var parser = function(args){
     args !== null, 'must provide an arguments object';
     typeof args === 'object', 'must provide an object type for arguments';
     typeof args.host === 'string', 'must provide a string for host argument';
-    args.host.indexOf('http') === -1, 'host must not provide protocol';
   }
 
 
@@ -22,7 +21,7 @@ var parser = function(args){
   // public properties
   
   // private properties
-  var host = args.host; // host name (no protocol - www.xxx.xxx)
+  var host = stripProtocol(args.host); // host name (no protocol - www.xxx.xxx)
   var path = args.path || '/'; // url path (/xxx.html)
 
   var stopParsing = false; // should we stop parsing data?
@@ -60,7 +59,18 @@ var parser = function(args){
     }
   };
 
+  this.getHost = function(){
+    return host;
+  }
+
   // private functions
+  function stripProtocol(url){
+    pre: {
+      typeof url === 'string', 'must provide a string argument';
+    }
+
+    return url.replace(/http[s]?:\/\//, '');
+  }
 
   // receives initial connection response and forwards processing
   // if neccessary
