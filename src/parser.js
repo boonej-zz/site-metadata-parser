@@ -1,7 +1,7 @@
 var https = require('https');
 const EventEmitter = require('events');
 
-class ParserEmitter extends EventEmitter{}
+var ParserEmitter extends EventEmitter{}
 
 var parser = function(args){
   
