@@ -5,7 +5,7 @@
     "email": "the.booneage@gmail.com"
   },
   "description": "A simple metadata parser.",
-  "main": "lib/parser.js",
+  "main": "lib/scraper.js",
   "version": "1.0.3",
   "repository": "https://github.com/boonej/site-metadata-parser",
   "license": "MIT",
