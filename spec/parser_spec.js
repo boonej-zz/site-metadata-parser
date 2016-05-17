@@ -12,6 +12,13 @@ var testHTML = fs.readFileSync('spec/parsetest.ht');
 describe('Parser', function() {
   
   describe('()', function() {
+
+    it ('should throw an exception if no arguments are provided', function(){
+      expect(function() {
+        new Parser();
+      }).toThrow('must provide an arguments object');
+    });
+
     it ('should not fail if host is provided', function() {
       expect(function() {
         new Parser(params);

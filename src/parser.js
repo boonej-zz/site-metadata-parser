@@ -6,7 +6,7 @@ class ParserEmitter extends EventEmitter{}
 var parser = function(args){
   
   pre: {
-    args !== null, 'must provide an arguments object';
+    typeof args !== 'undefined', 'must provide an arguments object';
     typeof args === 'object', 'must provide an object type for arguments';
     typeof args.host === 'string', 'must provide a string for host argument';
   }
