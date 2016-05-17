@@ -16,5 +16,15 @@
     "expect": "^1.20.1",
     "mocha": "^2.4.5",
     "should": "^8.3.1"
-  }
+  },
+  "keywords": [
+    "html",
+    "meta",
+    "metatag",
+    "parse",
+    "scrape",
+    "lightweight",
+    "simple",
+    "scraper"
+  ]
 }

@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var Parser = require('../lib/parser');
+var Scraper = require('../lib/scraper');
 var expect = require('expect');
 var fs = require('fs');
 
@@ -8,45 +8,75 @@ var params = {
 };
 
 var testHTML = fs.readFileSync('spec/parsetest.ht');
+var testScraper = new Scraper(params);
 
-describe('Parser', function() {
+describe('Scraper', function() {
   
   describe('()', function() {
 
     it ('should throw an exception if no arguments are provided', function(){
       expect(function() {
-        new Parser();
+        new Scraper();
       }).toThrow('must provide an arguments object');
     });
 
     it ('should not fail if host is provided', function() {
       expect(function() {
-        new Parser(params);
+        new Scraper(params);
       }).toNotThrow();
     });
 
     it ('should throw exception if no host is provided', function(){
       expect(function(){
-        new Parser({});
+        new Scraper({});
       }).toThrow('must provide a string for host argument');
     });
 
     it ('should strip protocol from an unsecure http url', function(){
-      var p = new Parser({host: 'http://www.google.com'});
+      var p = new Scraper({host: 'http://www.google.com'});
       expect(p.getHost()).toBe('www.google.com');
     });
 
     it ('should strip protocol from an unsecure https url', function(){
-      var p = new Parser({host: 'https://www.google.com'});
+      var p = new Scraper({host: 'https://www.google.com'});
       expect(p.getHost()).toBe('www.google.com');
     });
 
   });
 
+  describe('isValidUrl()', function(url) {
+    it ('should return true if a valid url (with protocol) is provided', 
+    function(){
+      expect(testScraper.isValidUrl('http://www.google.com')).toBe(true);
+    });
+
+    it ('should return true if a valid url (https) is provided',
+    function() {
+      expect(testScraper.isValidUrl('https://www.google.com')).toBe(true);
+    });
+
+    it ('should return true if a valid url (no protocol) is provided',
+    function() {
+      expect(testScraper.isValidUrl('www.google.com')).toBe(true);
+    });
+
+    it ('should return true if an ip address is provided',
+    function() {
+      expect(testScraper.isValidUrl('192.168.1.1/test.html')).toBe(true);
+    });
+
+    it ('should throw exeption if bad data is provided',
+      function() {
+      expect(function(){
+        testScraper.isValidUrl(381);
+      }).toThrow('string value must be provided');
+    });
+  });
+
   describe('scrape()', function() {
     it ('should not throw an exception if callback is provided', function() {
       expect(function() {
-        new Parser(params).scrape(function(err, data) {
+        new Scraper(params).scrape(function(err, data) {
   
         });
       }).toNotThrow();
@@ -54,7 +84,7 @@ describe('Parser', function() {
 
     it ('should return a valid object upon completion', function(done) {
       this.timeout(10000);
-      new Parser({host: 'www.youtube.com', path: '/watch?v=hrxkjRXk7m8'})
+      new Scraper({host: 'www.youtube.com', path: '/watch?v=hrxkjRXk7m8'})
         .scrape(function(err, data) {
           if (typeof data !== 'object') {
             throw('Invalid object type returned.');
@@ -66,7 +96,7 @@ describe('Parser', function() {
 
     it ('should contain expected data upon completion', function(done) {
       this.timeout(10000);
-      new Parser({host: 'www.youtube.com', path: '/watch?v=hrxkjRXk7m8'})
+      new Scraper({host: 'www.youtube.com', path: '/watch?v=hrxkjRXk7m8'})
         .scrape(function(err, data) {
           if (data.ogImage !== 
             'https://i.ytimg.com/vi/hrxkjRXk7m8/maxresdefault.jpg') {
@@ -83,7 +113,7 @@ describe('Parser', function() {
 
     describe('parse()', function(){
       it ('should create a valid object', function(done){
-        var obj = new Parser(params).metaParser.parse(testHTML.toString());
+        var obj = new Scraper(params).metaParser.parse(testHTML.toString());
         expect(obj.twitterAppIdIpad).toBe('544007664');
         done();
       });
