@@ -22,8 +22,18 @@ var Scraper = require('lite-meta-scraper');
 
 new Scraper({
   host: 'www.somesite.com',
-  path: '/'
+  path: '/path/to/file'
 }).scrape(function(err, data) {
+  // do something with data
+});
+```
+
+```javascript
+var Scraper = require('lite-meta-scraper');
+
+new Scraper({
+  url: 'www.somesite.com/path/to/file'
+}).scrape(function(err, data){
   // do something with data
 });
 ```
@@ -106,6 +116,4 @@ Example Output
 }
 ```
 
-TO DO
--------------------------------------------------------------------------------
 
