@@ -8,7 +8,10 @@ var Scraper = function(args){
   pre: {
     typeof args !== 'undefined', 'must provide an arguments object';
     typeof args === 'object', 'must provide an object type for arguments';
-    typeof args.host === 'string', 'must provide a string for host argument';
+    typeof args.host === 'string' || typeof args.url === 'string', 
+      'must provide a string for host OR url argument';
+    (typeof args.host === 'string' && stripProtocol(args.host).split('/').length < 2) || typeof args.url === 'string',
+      'host must not contain path';
   }
 
 
@@ -21,8 +24,11 @@ var Scraper = function(args){
   // public properties
   
   // private properties
-  var host = stripProtocol(args.host); // host name (no protocol - www.xxx.xxx)
+  var host = args.host
+    ? stripProtocol(args.host)
+    : false; // host name (no protocol - www.xxx.xxx)
   var path = args.path || '/'; // url path (/xxx.html)
+  var url = args.url || false; // Full URL
 
   var stopParsing = false; // should we stop parsing data?
   var startedReadingHead = false; // did we begin reading the head?
@@ -32,15 +38,15 @@ var Scraper = function(args){
   var metaObject = null; // parsed meta object
   var metaError = null; // error object provided to callback
   var metaCallback = null; // callback provided to requestor
-
+  
   // Handle DONE emitter
   EMITTER.on(STOP_PARSING, afterStopParsing);
 
   this.metaParser = new metaParser(); 
 
-  this.isValidUrl = function (url) {
+  this.isValidUrl = function (u) {
     pre: {
-      typeof url === 'string', 'string value must be provided';
+      typeof u === 'string', 'string value must be provided';
     }
 
     var pattern = new RegExp(
@@ -50,21 +56,25 @@ var Scraper = function(args){
         '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' +
         '(\\?[;&a-z\\d%_.~+=-]*)?' +
         '(\\#[-a-z\\d_]*)?$','i');
-    return pattern.test(url);
+    return pattern.test(u);
   };
 
   // public methods
   this.scrape = function startParseOperation(callback){
     pre: {
-      typeof host === 'string', 'must provide a valid string for host';
-      typeof path === 'string', 'must provide a valid string for path';
+      (typeof url === 'string' && host === false) || (typeof host === 'string' && url === false), 'must provide a valid string for URL OR host';      
     }
 
     metaCallback = callback;
+  
+    if (url) {
+      host = getHost(url);
+      path = getPath(url);
+    }
 
     var options = {
-      host: host,
-      path: path
+      host: host || host,
+      path: path || path
     }
 
     https.request(options, afterConnection).end();
@@ -80,12 +90,33 @@ var Scraper = function(args){
 
   
   // private functions
-  function stripProtocol(url){
+  
+  function getHost(u){
     pre: {
-      typeof url === 'string', 'must provide a string argument';
+      typeof u === 'string', 'must provide a string argument';
+    }
+    var s = stripProtocol(u);
+    s = s.split('/')[0];
+    return s;
+  }
+  
+  function getPath(u){
+    pre: {
+      typeof u === 'string', 'must provide a string argument';
+    }
+    var s = stripProtocol(u);
+    var a = s.split('/');
+    a.shift();
+    s = '/' + a.join('/');
+    return s;
+  }
+  
+  function stripProtocol(u){
+    pre: {
+      typeof u === 'string', 'must provide a string argument';
     }
 
-    return url.replace(/http[s]?:\/\//, '');
+    return u.replace(/http[s]?:\/\//, '');
   }
 
   // receives initial connection response and forwards processing

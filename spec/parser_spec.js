@@ -29,7 +29,7 @@ describe('Scraper', function() {
     it ('should throw exception if no host is provided', function(){
       expect(function(){
         new Scraper({});
-      }).toThrow('must provide a string for host argument');
+      }).toThrow('must provide a string for host OR url argument');
     });
 
     it ('should strip protocol from an unsecure http url', function(){
@@ -41,6 +41,12 @@ describe('Scraper', function() {
       var p = new Scraper({host: 'https://www.google.com'});
       expect(p.getHost()).toBe('www.google.com');
     });
+    
+    it ('should fail if a path is included in the host parameter', function() {
+      expect(function() {
+        new Scraper({host: 'https://www.youtube.com/watch?v=oWnAvDsZKay'});
+      }).toThrow('host must not contain path');
+    })
 
   });
 
@@ -65,7 +71,7 @@ describe('Scraper', function() {
       expect(testScraper.isValidUrl('192.168.1.1/test.html')).toBe(true);
     });
 
-    it ('should throw exeption if bad data is provided',
+    it ('should throw exception if bad data is provided',
       function() {
       expect(function(){
         testScraper.isValidUrl(381);
@@ -76,11 +82,13 @@ describe('Scraper', function() {
   describe('scrape()', function() {
     it ('should not throw an exception if callback is provided', function() {
       expect(function() {
-        new Scraper(params).scrape(function(err, data) {
+        new Scraper(params).scrape({host: 'www.google.com'}, function(err, data) {
   
         });
       }).toNotThrow();
     });
+    
+   
 
     it ('should return a valid object upon completion', function(done) {
       this.timeout(15000);
@@ -93,10 +101,34 @@ describe('Scraper', function() {
         });
 
     });
+    
+    it ('should return a valid object if only a url is provided', function(done){
+      this.timeout(15000);
+      new Scraper({url: 'https://www.youtube.com/watch?v=oWnAvDsZKaY'})
+        .scrape(function(err, data) {
+          if (typeof data !== 'object') {
+            throw('Invalid object type returned.');
+          }
+          done();
+        });
+    });
 
     it ('should contain expected data upon completion', function(done) {
       this.timeout(15000);
       new Scraper({host: 'https://www.youtube.com', path: '/watch?v=oWnAvDsZKaY'})
+        .scrape(function(err, data) {
+          if (data.alAndroidPackage !== 
+            'com.google.android.youtube') {
+            throw('Unexpected return data.');
+          }
+          done();
+        });
+
+    });
+    
+    it ('should contain expected data upon completion if only a url is provided', function(done) {
+      this.timeout(15000);
+      new Scraper({url: 'https://www.youtube.com/watch?v=oWnAvDsZKaY'})
         .scrape(function(err, data) {
           if (data.alAndroidPackage !== 
             'com.google.android.youtube') {
