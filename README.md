@@ -108,4 +108,5 @@ Example Output
 
 TO DO
 -------------------------------------------------------------------------------
+*  Accept full URL and host in addition to specifying host and path.
 

@@ -83,8 +83,8 @@ describe('Scraper', function() {
     });
 
     it ('should return a valid object upon completion', function(done) {
-      this.timeout(10000);
-      new Scraper({host: 'en.wikipedia.org', path: '/wiki/Main_Page'})
+      this.timeout(15000);
+      new Scraper({host: 'https://www.youtube.com', path: '/watch?v=oWnAvDsZKaY'})
         .scrape(function(err, data) {
           if (typeof data !== 'object') {
             throw('Invalid object type returned.');
@@ -95,11 +95,11 @@ describe('Scraper', function() {
     });
 
     it ('should contain expected data upon completion', function(done) {
-      this.timeout(10000);
-      new Scraper({host: 'en.wikipedia.org', path: '/wiki/Main_Page'})
+      this.timeout(15000);
+      new Scraper({host: 'https://www.youtube.com', path: '/watch?v=oWnAvDsZKaY'})
         .scrape(function(err, data) {
-          if (data.ogImage !== 
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Elfin-woods_warbler_perched_on_a_tree_branch_%28mirrored%29.jpg/1200px-Elfin-woods_warbler_perched_on_a_tree_branch_%28mirrored%29.jpg') {
+          if (data.alAndroidPackage !== 
+            'com.google.android.youtube') {
             throw('Unexpected return data.');
           }
           done();

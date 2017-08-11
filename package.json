@@ -13,14 +13,14 @@
   "devDependencies": {
     "babel-cli": "^6.24.1",
     "babel-plugin-contracts": "^1.1.1",
-    "chai": "^3.5.0",
+    "chai": "^4.1.1",
     "expect": "^1.20.1",
     "gulp": "^3.9.1",
     "gulp-babel": "^7.0.0",
     "gulp-mocha": "^4.3.1",
     "minimatch": "^3.0.4",
-    "mocha": "^2.4.5",
-    "should": "^8.3.1"
+    "mocha": "^3.5.0",
+    "should": "^11.2.1"
   },
   "keywords": [
     "html",
