@@ -168,7 +168,7 @@ var Scraper = function(args){
   // initiate header processing
   function afterHeadReceived() {
     pre: {
-      metaError === null, 'no errors should have occured before processing';
+      metaError === null, 'no errors should have occurred before processing';
     }
 
     metaObject = new metaParser().parse(tempData, {});

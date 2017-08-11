@@ -11,6 +11,7 @@
   "license": "MIT",
   "bugs": "https://github.com/boonej/site-metadata-parser/issues",
   "devDependencies": {
+    "babel-cli": "^6.24.1",
     "babel-plugin-contracts": "^1.1.1",
     "chai": "^3.5.0",
     "expect": "^1.20.1",
