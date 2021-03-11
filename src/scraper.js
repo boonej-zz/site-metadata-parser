@@ -329,7 +329,7 @@ var metaParser = function() {
       typeof key === 'string', 'must provide string value for key';
     }
   
-    keyParts = key.split(/:|_/);
+    var keyParts = key.split(/:|_/);
     
     if (keyParts.length > 1) {
       for (var i = 0; i != keyParts.length; ++i) {
